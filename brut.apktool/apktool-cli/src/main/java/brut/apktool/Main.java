@@ -170,9 +170,11 @@ public class Main {
                             + "already exists. Use -f switch if you want to overwrite it.");
             System.exit(1);
         } catch (InFileNotFoundException ex) {
+            ex.printStackTrace();
             System.err.println("Input file (" + apkName + ") " + "was not found or was not readable.");
             System.exit(1);
         } catch (CantFindFrameworkResException ex) {
+            ex.printStackTrace();
             System.err
                     .println("Can't find framework resources for package of id: "
                             + String.valueOf(ex.getPkgId())
@@ -180,9 +182,11 @@ public class Main {
                             + "framework files, see project website for more info.");
             System.exit(1);
         } catch (IOException ex) {
+            ex.printStackTrace();
             System.err.println("Could not modify file. Please ensure you have permission.");
             System.exit(1);
         } catch (DirectoryException ex) {
+            ex.printStackTrace();
             System.err.println("Could not modify internal dex files. Please ensure you have permission.");
             System.exit(1);
         } finally {
