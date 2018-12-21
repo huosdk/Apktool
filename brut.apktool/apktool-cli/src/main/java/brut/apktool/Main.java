@@ -237,6 +237,7 @@ public class Main {
             }
             new Androlib(apkOptions).build(new File(appDirName), outFile);
         } catch (BrutException ex) {
+            ex.printStackTrace();
             System.err.println(ex.getMessage());
             System.exit(1);
         }
