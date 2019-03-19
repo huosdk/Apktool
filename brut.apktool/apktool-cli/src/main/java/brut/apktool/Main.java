@@ -201,9 +201,6 @@ public class Main {
         String appDirName = args.length < 2 ? "." : args[1];
         File outFile;
         ApkOptions apkOptions = new ApkOptions();
-        if(cli.hasOption("crunch")){
-            apkOptions.cruncherEnabled=true;
-        }
         // check for build options
         if (cli.hasOption("f") || cli.hasOption("force-all")) {
             apkOptions.forceBuildAll = true;
@@ -433,11 +430,6 @@ public class Main {
                 .longOpt("verbose")
                 .build();
 
-        Option crunchOption = Option.builder("crunch")
-                .longOpt("crunch")
-                .desc("check png is ok!")
-                .build();
-
         // check for advance mode
         if (isAdvanceMode()) {
             DecodeOptions.addOption(noDbgOption);
@@ -469,7 +461,6 @@ public class Main {
         BuildOptions.addOption(outputBuiOption);
         BuildOptions.addOption(frameDirOption);
         BuildOptions.addOption(forceBuiOption);
-        BuildOptions.addOption(crunchOption);
 
         // add basic framework options
         frameOptions.addOption(tagOption);

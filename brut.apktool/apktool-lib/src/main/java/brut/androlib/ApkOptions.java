@@ -41,9 +41,9 @@ public class ApkOptions {
      * android {
      *     aaptOptions { cruncherEnabled = false }
      * }
-     *  由于渠道可能存在不规范的.9图，可能导致打包失败，需要设置为false
+     *  设置为false会导致.9图变形 https://www.cnblogs.com/purpleraintear/p/6020715.html
      */
-    public boolean cruncherEnabled=false;
+    public boolean cruncherEnabled=true;
 
     public boolean isAapt2() {
         return this.useAapt2 || this.aaptVersion == 2;
