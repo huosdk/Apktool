@@ -366,6 +366,9 @@ final public class AndrolibResources {
 
         // Link them into the final apk, reusing our old command after clearing for the aapt2 binary
         cmd = new ArrayList<>(compileCommand);
+        if(!apkOptions.cruncherEnabled){
+            cmd.add("--no-crunch");
+        }
         cmd.add("link");
 
         cmd.add("-o");
@@ -476,7 +479,9 @@ final public class AndrolibResources {
             throws AndrolibException {
 
         cmd.add("p");
-
+        if(!apkOptions.cruncherEnabled){
+            cmd.add("--no-crunch");
+        }
         if (apkOptions.verbose) { // output aapt verbose
             cmd.add("-v");
         }
@@ -591,6 +596,12 @@ final public class AndrolibResources {
         int currentSize = StringUtils.join(cmd, " ").getBytes().length;
         List<String> doNotCompressCmdList=new ArrayList();
         doNotCompressCmdList.addAll(doNotCompressCmds);
+//        Collections.sort(doNotCompressCmdList, new Comparator<String>() {
+//            @Override
+//            public int compare(String o1, String o2) {
+//                return o1.length()-o2.length();
+//            }
+//        });
         Collections.sort(doNotCompressCmdList, Comparator.comparingInt(String::length));
         int limitSize=8*1024;
         for (String file : doNotCompressCmdList) {

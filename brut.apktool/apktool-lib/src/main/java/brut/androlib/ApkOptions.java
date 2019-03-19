@@ -36,6 +36,15 @@ public class ApkOptions {
 
     public int aaptVersion = 1; // default to v1
 
+    /**
+     * 是否对图片进行压缩处理,相当于在as gradle中添加如下配置
+     * android {
+     *     aaptOptions { cruncherEnabled = false }
+     * }
+     *  由于渠道可能存在不规范的.9图，可能导致打包失败，需要设置为false
+     */
+    public boolean cruncherEnabled=false;
+
     public boolean isAapt2() {
         return this.useAapt2 || this.aaptVersion == 2;
     }
