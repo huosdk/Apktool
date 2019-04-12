@@ -145,6 +145,12 @@ Some recent releases for understanding the pattern can be found below.
 3. [2.0.2](https://connortumbleson.com/2015/10/12/apktool-v2-0-2-released/)
 4. [2.0.0](https://connortumbleson.com/2015/04/20/apktool-v2-0-0-released/)
 
+For obtaining commit authors and counts. The following command does the legwork:
+
+    git shortlog -s -n --all --no-merges --since="05 Sept 2018"
+
+Obviously replacing the date with the release date of the last version.
+
 So write the post. I tend to always include the following:
 
 1. Image of release for featured image when reshared on socials.
@@ -194,7 +200,7 @@ is just a guideline but helps me to release a new version every 3 months.
 ### Social Spam
 
 The final step is to send this release into the wild via some social posting. Head to the blog
-where the release post was and send that link to Twiter, Google and whatever else you use.
+where the release post was and send that link to Twitter, Google and whatever else you use.
 
 Relax and watch the bug tracker.
 
@@ -225,8 +231,8 @@ we aren't building the entire AOSP package, the initial build is to just see if 
 
 We check out a certain tag. Currently we use 
 
- * aapt2 - `android-9.0.0_r3`.
- * aapt1 - `android-9.0.0_r3`.
+ * aapt2 - `android-9.0.0_r22`.
+ * aapt1 - `android-9.0.0_r22`.
 
 ### Including our modified `frameworks/base` package.
 
@@ -254,6 +260,7 @@ we lose the ability to quickly build just the aapt binary. So the Windows proced
 1. `source build/envsetup.sh`
 2. `lunch sdk-eng`
 3. `make OUT_DIR=out-x64 LOCAL_MULTILIB=64 USE_NINJA=false aapt`
+4. `strip out-x64/host/darwin-x86/bin/aapt_64`
 
 As of Android Oreo (API 26) all aapt binaries are 64 bit (With exception of Windows). 
 
@@ -274,7 +281,7 @@ we lose the ability to quickly build just the aapt2 binary. So the Windows proce
 1. `export ANDROID_JAVA_HOME=/Path/To/Jdk`
 2. `source build/envsetup.sh`
 3. `make OUT_DIR=out-x64 LOCAL_MULTILIB=64 USE_NINJA=false aapt2`
-4. `strip out-x64/host/darwin-x86/bin/aapt2`
+4. `strip out-x64/host/darwin-x86/bin/aapt2_64`
 
 #### Confirming aapt/aapt2 builds are static
 
