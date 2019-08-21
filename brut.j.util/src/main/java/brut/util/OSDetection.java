@@ -20,6 +20,18 @@ public class OSDetection {
     private static String OS = System.getProperty("os.name").toLowerCase();
     private static String Bit = System.getProperty("sun.arch.data.model").toLowerCase();
 
+    /**
+     * 修复64位系统使用32位的jdk获取的 System.getenv("PROCESSOR_ARCHITECTURE")一直是32的问题。
+     * 以下修复方案在win下测试通过，其他系统待测试
+     */
+    static {
+        if (System.getenv("PROCESSOR_ARCHITECTURE").toLowerCase().contains("64") || System.getenv("PROCESSOR_ARCHITEW6432").toLowerCase().contains("64")) {
+            Bit = "64";
+        } else {
+            Bit = "32";
+        }
+    }
+
     public static boolean isWindows() {
         return (OS.contains("win"));
     }
