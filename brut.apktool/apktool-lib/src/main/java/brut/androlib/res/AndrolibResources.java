@@ -609,6 +609,10 @@ final public class AndrolibResources {
         if (rawDir != null) {
             cmd.add(rawDir.getAbsolutePath());
         }
+        if (apkOptions.doNotCompress != null) {
+            //处理win下cmd命令超出8k限制报错
+            cmd=addDoNetCompressCmd(cmd,apkOptions.doNotCompress);
+        }
         try {
             OS.exec(cmd.toArray(new String[0]));
             LOGGER.fine("command ran: ");
@@ -616,6 +620,46 @@ final public class AndrolibResources {
         } catch (BrutException ex) {
             throw new AndrolibException(ex);
         }
+    }
+    /**
+     * 添加不压缩文件的命令
+     * win下执行控制台命令有长度8k限制，超出会报错：CreateProcess error=206, 文件名或 扩展名太长错误
+     * @param cmd 命令
+     * @param doNotCompressCmds 待合并的指定不压缩文件
+     * @return win下命令合并后超过8*1024-100后返回false,其它返回true
+     */
+    private List<String> addDoNetCompressCmd(List<String> cmd,Collection<String> doNotCompressCmds){
+        if(!OSDetection.isWindows()){
+            for (String file : doNotCompressCmds) {
+                cmd.add("-0");
+                cmd.add(file);
+            }
+            return cmd;
+        }
+        int currentSize = StringUtils.join(cmd, " ").getBytes().length;
+        List<String> doNotCompressCmdList=new ArrayList();
+        doNotCompressCmdList.addAll(doNotCompressCmds);
+//        Collections.sort(doNotCompressCmdList, new Comparator<String>() {
+//            @Override
+//            public int compare(String o1, String o2) {
+//                return o1.length()-o2.length();
+//            }
+//        });
+        Collections.sort(doNotCompressCmdList, Comparator.comparingInt(String::length));
+        int limitSize=8*1024;
+        for (String file : doNotCompressCmdList) {
+            int partCmdLength=new StringBuilder().append(" -0 ").append(file).append(" ").toString().getBytes().length;
+            if(currentSize+partCmdLength<=limitSize){
+                cmd.add("-0");
+                cmd.add(file);
+                currentSize+=partCmdLength;
+            }else{
+                LOGGER.warning("cmd length beyond 8k limit for win,remove doNotCompress file:"+file);
+            }
+        }
+        currentSize = StringUtils.join(cmd, " ").getBytes().length;
+        LOGGER.info("aapt cmd size："+currentSize);
+        return cmd;
     }
 
     public void aaptPackage(File apkFile, File manifest, File resDir, File rawDir, File assetDir, File[] include)
