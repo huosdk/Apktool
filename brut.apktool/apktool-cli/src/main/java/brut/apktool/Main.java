@@ -1,6 +1,6 @@
-/**
- *  Copyright (C) 2019 Ryszard Wiśniewski <brut.alll@gmail.com>
- *  Copyright (C) 2019 Connor Tumbleson <connor.tumbleson@gmail.com>
+/*
+ *  Copyright (C) 2010 Ryszard Wiśniewski <brut.alll@gmail.com>
+ *  Copyright (C) 2010 Connor Tumbleson <connor.tumbleson@gmail.com>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ public class Main {
         } catch (ParseException ex) {
             System.err.println(ex.getMessage());
             usage();
+            System.exit(1);
             return;
         }
 
@@ -523,6 +524,7 @@ public class Main {
         allOptions.addOption(quietOption);
         allOptions.addOption(aapt2Option);
         allOptions.addOption(noCrunchOption);
+        allOptions.addOption(onlyMainClassesOption);
     }
 
     private static String verbosityHelp() {

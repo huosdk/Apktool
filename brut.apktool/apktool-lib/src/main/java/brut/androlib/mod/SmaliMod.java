@@ -1,6 +1,6 @@
-/**
- *  Copyright (C) 2019 Ryszard Wiśniewski <brut.alll@gmail.com>
- *  Copyright (C) 2019 Connor Tumbleson <connor.tumbleson@gmail.com>
+/*
+ *  Copyright (C) 2010 Ryszard Wiśniewski <brut.alll@gmail.com>
+ *  Copyright (C) 2010 Connor Tumbleson <connor.tumbleson@gmail.com>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ public class SmaliMod {
         InputStream is = new FileInputStream(smaliFile);
         InputStreamReader reader = new InputStreamReader(is, "UTF-8");
 
-        lexer = new smaliFlexLexer(reader);
+        lexer = new smaliFlexLexer(reader, apiLevel);
         ((smaliFlexLexer)lexer).setSourceFile(smaliFile);
         tokens = new CommonTokenStream((TokenSource) lexer);
 
