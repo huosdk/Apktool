@@ -1,6 +1,6 @@
-/**
- *  Copyright (C) 2019 Ryszard Wiśniewski <brut.alll@gmail.com>
- *  Copyright (C) 2019 Connor Tumbleson <connor.tumbleson@gmail.com>
+/*
+ *  Copyright (C) 2010 Ryszard Wiśniewski <brut.alll@gmail.com>
+ *  Copyright (C) 2010 Connor Tumbleson <connor.tumbleson@gmail.com>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import brut.androlib.res.xml.ResXmlPatcher;
 import brut.common.BrutException;
 import brut.util.*;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.xmlpull.v1.XmlSerializer;
 
 import java.io.*;
@@ -100,16 +99,19 @@ final public class AndrolibResources {
             throws AndrolibException {
         int id = 0;
         int value = 0;
+        int index = 0;
 
-        for (ResPackage resPackage : pkgs) {
+        for (int i = 0; i < pkgs.length; i++) {
+            ResPackage resPackage = pkgs[i];
             if (resPackage.getResSpecCount() > value && ! resPackage.getName().equalsIgnoreCase("android")) {
                 value = resPackage.getResSpecCount();
                 id = resPackage.getId();
+                index = i;
             }
         }
 
         // if id is still 0, we only have one pkgId which is "android" -> 1
-        return (id == 0) ? pkgs[0] : pkgs[1];
+        return (id == 0) ? pkgs[0] : pkgs[index];
     }
 
     public ResPackage loadFrameworkPkg(ResTable resTable, int id, String frameTag)
@@ -315,8 +317,31 @@ final public class AndrolibResources {
         return Integer.toString(target);
     }
 
+    private File createDoNotCompressExtensionsFile(ApkOptions apkOptions) throws AndrolibException {
+        if (apkOptions.doNotCompress == null || apkOptions.doNotCompress.isEmpty()) {
+            return null;
+        }
+
+        File doNotCompressFile;
+        try {
+            doNotCompressFile = File.createTempFile("APKTOOL", null);
+            doNotCompressFile.deleteOnExit();
+
+            BufferedWriter fileWriter = new BufferedWriter(new FileWriter(doNotCompressFile));
+            for (String extension : apkOptions.doNotCompress) {
+                fileWriter.write(extension);
+                fileWriter.newLine();
+            }
+            fileWriter.close();
+
+            return doNotCompressFile;
+        } catch (IOException ex) {
+            throw new AndrolibException(ex);
+        }
+    }
+
     private void aapt2Package(File apkFile, File manifest, File resDir, File rawDir, File assetDir, File[] include,
-                              List<String> cmd)
+                              List<String> cmd, boolean customAapt)
             throws AndrolibException {
 
         List<String> compileCommand = new ArrayList<>(cmd);
@@ -367,9 +392,6 @@ final public class AndrolibResources {
 
         // Link them into the final apk, reusing our old command after clearing for the aapt2 binary
         cmd = new ArrayList<>(compileCommand);
-        if(!apkOptions.cruncherEnabled){
-            cmd.add("--no-crunch");
-        }
         cmd.add("link");
 
         cmd.add("-o");
@@ -426,7 +448,13 @@ final public class AndrolibResources {
             cmd.add("-x");
         }
 
-        if (apkOptions.doNotCompress != null) {
+        if (apkOptions.doNotCompress != null && !customAapt) {
+            // Use custom -e option to avoid limits on commandline length.
+            // Can only be used when custom aapt binary is not used.
+            String extensionsFilePath = createDoNotCompressExtensionsFile(apkOptions).getAbsolutePath();
+            cmd.add("-e");
+            cmd.add(extensionsFilePath);
+        } else if (apkOptions.doNotCompress != null) {
             for (String file : apkOptions.doNotCompress) {
                 cmd.add("-0");
                 cmd.add(file);
@@ -480,9 +508,7 @@ final public class AndrolibResources {
             throws AndrolibException {
 
         cmd.add("p");
-        if(!apkOptions.cruncherEnabled){
-            cmd.add("--no-crunch");
-        }
+
         if (apkOptions.verbose) { // output aapt verbose
             cmd.add("-v");
         }
@@ -544,6 +570,19 @@ final public class AndrolibResources {
             cmd.add("-x");
         }
 
+        if (apkOptions.doNotCompress != null && !customAapt) {
+            // Use custom -e option to avoid limits on commandline length.
+            // Can only be used when custom aapt binary is not used.
+            String extensionsFilePath = createDoNotCompressExtensionsFile(apkOptions).getAbsolutePath();
+            cmd.add("-e");
+            cmd.add(extensionsFilePath);
+        } else if (apkOptions.doNotCompress != null) {
+            for (String file : apkOptions.doNotCompress) {
+                cmd.add("-0");
+                cmd.add(file);
+            }
+        }
+
         if (!apkOptions.resourcesAreCompressed) {
             cmd.add("-0");
             cmd.add("arsc");
@@ -570,10 +609,6 @@ final public class AndrolibResources {
         if (rawDir != null) {
             cmd.add(rawDir.getAbsolutePath());
         }
-        if (apkOptions.doNotCompress != null) {
-            //处理win下cmd命令超出8k限制报错
-            cmd=addDoNetCompressCmd(cmd,apkOptions.doNotCompress);
-        }
         try {
             OS.exec(cmd.toArray(new String[0]));
             LOGGER.fine("command ran: ");
@@ -581,46 +616,6 @@ final public class AndrolibResources {
         } catch (BrutException ex) {
             throw new AndrolibException(ex);
         }
-    }
-    /**
-     * 添加不压缩文件的命令
-     * win下执行控制台命令有长度8k限制，超出会报错：CreateProcess error=206, 文件名或 扩展名太长错误
-     * @param cmd 命令
-     * @param doNotCompressCmds 待合并的指定不压缩文件
-     * @return win下命令合并后超过8*1024-100后返回false,其它返回true
-     */
-    private List<String> addDoNetCompressCmd(List<String> cmd,Collection<String> doNotCompressCmds){
-        if(!OSDetection.isWindows()){
-            for (String file : doNotCompressCmds) {
-                cmd.add("-0");
-                cmd.add(file);
-            }
-            return cmd;
-        }
-        int currentSize = StringUtils.join(cmd, " ").getBytes().length;
-        List<String> doNotCompressCmdList=new ArrayList();
-        doNotCompressCmdList.addAll(doNotCompressCmds);
-//        Collections.sort(doNotCompressCmdList, new Comparator<String>() {
-//            @Override
-//            public int compare(String o1, String o2) {
-//                return o1.length()-o2.length();
-//            }
-//        });
-        Collections.sort(doNotCompressCmdList, Comparator.comparingInt(String::length));
-        int limitSize=8*1024;
-        for (String file : doNotCompressCmdList) {
-            int partCmdLength=new StringBuilder().append(" -0 ").append(file).append(" ").toString().getBytes().length;
-            if(currentSize+partCmdLength<=limitSize){
-                cmd.add("-0");
-                cmd.add(file);
-                currentSize+=partCmdLength;
-            }else{
-                LOGGER.warning("cmd length beyond 8k limit for win,remove doNotCompress file:"+file);
-            }
-        }
-        currentSize = StringUtils.join(cmd, " ").getBytes().length;
-        LOGGER.info("aapt cmd size："+currentSize);
-        return cmd;
     }
 
     public void aaptPackage(File apkFile, File manifest, File resDir, File rawDir, File assetDir, File[] include)
@@ -639,7 +634,7 @@ final public class AndrolibResources {
         }
 
         if (apkOptions.isAapt2()) {
-            aapt2Package(apkFile, manifest, resDir, rawDir, assetDir, include, cmd);
+            aapt2Package(apkFile, manifest, resDir, rawDir, assetDir, include, cmd, customAapt);
             return;
         }
         aapt1Package(apkFile, manifest, resDir, rawDir, assetDir, include, cmd, customAapt);
@@ -888,6 +883,7 @@ final public class AndrolibResources {
             crc.update(data);
             entry = new ZipEntry("resources.arsc");
             entry.setSize(data.length);
+            entry.setMethod(ZipOutputStream.STORED);
             entry.setCrc(crc.getValue());
             out.putNextEntry(entry);
             out.write(data);
